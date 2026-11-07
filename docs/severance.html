@@ -1,0 +1,17 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>퇴직금 계산기</title><meta name="description" content="입사일, 퇴사일, 최근 3개월 급여로 법정 퇴직금을 계산합니다."><style>:root{--bg:#fff;--fg:#1c2230;--mut:#5b6475;--card:#f4f6fa;--ac:#1a56db;--bd:#d9dee8}
+@media(prefers-color-scheme:dark){:root{--bg:#12151c;--fg:#e8ebf2;--mut:#a3adc2;--card:#1b2030;--ac:#7ba5ff;--bd:#2c3347}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 -apple-system,'Malgun Gothic',sans-serif}
+main{max-width:720px;margin:0 auto;padding:20px 16px 60px}h1{font-size:1.5rem;margin:.4em 0}h2{font-size:1.15rem;margin-top:2em}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:14px 0}
+label{display:block;margin:.6em 0 .2em;font-weight:600}input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);font-size:16px}
+button{margin-top:14px;padding:12px 18px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.res{font-size:1.1rem;margin-top:14px}.res b{color:var(--ac)}table{width:100%;border-collapse:collapse;font-size:.92rem}td,th{border-bottom:1px solid var(--bd);padding:6px;text-align:right}
+a{color:var(--ac)}nav a{margin-right:14px}.note{color:var(--mut);font-size:.9rem}footer{margin-top:40px;color:var(--mut);font-size:.85rem}</style></head><body><main><nav><a href="index.html">계산기 목록</a><a href="loan.html">대출 이자</a><a href="savings.html">적금·복리</a><a href="severance.html">퇴직금</a><a href="hourly.html">시급 월급 환산</a><a href="lotto.html">로또 확률</a></nav>
+<h1>퇴직금 계산기</h1><p class="note">입사일, 퇴사일, 최근 3개월 급여로 법정 퇴직금을 계산합니다.</p><div class="card"><label>입사일</label><input id="s" type="date" value="2021-03-01"><label>퇴사일</label><input id="e" type="date" value="2026-03-01">
+<label>퇴직 전 3개월 급여 합계 (세전, 원)</label><input id="w" type="number" value="9000000"><label>연간 상여금 (원)</label><input id="b" type="number" value="0"><label>연차수당 (원, 지급액)</label><input id="v" type="number" value="0">
+<button onclick="go()">계산하기</button><div class="res" id="o"></div></div><h2>퇴직금 계산식은 무엇인가요?</h2><p>1일 평균임금 × 30일 × (재직일수 ÷ 365)입니다. 평균임금은 퇴직 전 3개월 임금 총액을 그 기간의 일수로 나눈 값에 상여금·연차수당의 3/12을 더해 계산합니다.</p><h2>정확한 금액은 어디서 확인하나요?</h2><p>회사의 급여 기준과 근로계약에 따라 달라질 수 있습니다. 정확한 금액은 고용노동부 퇴직금 계산기나 노무 상담으로 확인하세요.</p>
+<footer>입력한 값은 이 기기 안에서만 계산되며 서버로 전송되지 않습니다. 결과는 참고용이며 법적·금융 효력이 없습니다.</footer></main><script>const f=n=>Math.round(n).toLocaleString('ko-KR');function go(){const S=new Date(s.value),E=new Date(e.value);const days=Math.round((E-S)/864e5)+1;
+const q=new Date(E);q.setMonth(q.getMonth()-3);const d3=Math.round((E-q)/864e5)+1;
+const avg=(+w.value+ +b.value*3/12+ +v.value*3/12)/d3;const sev=avg*30*days/365;
+o.innerHTML='재직일수 <b>'+days+'일</b> ('+(days/365).toFixed(2)+'년)<br>1일 평균임금 <b>'+f(avg)+'원</b><br>예상 퇴직금 <b>'+f(days>=365?sev:0)+'원</b>'+(days<365?'<br><span class="note">재직 1년 미만이면 법정 퇴직금 대상이 아닙니다.</span>':'')}go()</script></body></html>
