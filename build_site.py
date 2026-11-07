@@ -14,9 +14,10 @@ main{max-width:720px;margin:0 auto;padding:20px 16px 60px}h1{font-size:1.5rem;ma
 label{display:block;margin:.6em 0 .2em;font-weight:600}input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);font-size:16px}
 button{margin-top:14px;padding:12px 18px;border:0;border-radius:8px;background:var(--ac);color:#fff;font-size:16px;font-weight:700;cursor:pointer}
 .res{font-size:1.1rem;margin-top:14px}.res b{color:var(--ac)}table{width:100%;border-collapse:collapse;font-size:.92rem}td,th{border-bottom:1px solid var(--bd);padding:6px;text-align:right}
-a{color:var(--ac)}nav a{margin-right:14px}.note{color:var(--mut);font-size:.9rem}footer{margin-top:40px;color:var(--mut);font-size:.85rem}"""
+a{color:var(--ac)}nav{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.92rem}.note{color:var(--mut);font-size:.9rem}footer{margin-top:40px;color:var(--mut);font-size:.85rem}"""
 
-NAV = '<nav><a href="index.html">계산기 목록</a><a href="loan.html">대출 이자</a><a href="savings.html">적금·복리</a><a href="severance.html">퇴직금</a><a href="hourly.html">시급 월급 환산</a><a href="lotto.html">로또 확률</a></nav>'
+BASE = "https://jamesdin94-sketch.github.io/calc/"
+DOCS = {}
 PAGES = {}
 FMT = "const f=n=>Math.round(n).toLocaleString('ko-KR');"
 
@@ -24,10 +25,10 @@ FMT = "const f=n=>Math.round(n).toLocaleString('ko-KR');"
 def page(slug, title, desc, body, script, faq):
     faqs = "".join(f"<h2>{html.escape(q)}</h2><p>{html.escape(a)}</p>" for q, a in faq)
     doc = f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc)}"><style>{CSS}</style></head><body><main>{NAV}
+<title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc)}"><link rel="canonical" href="{BASE}{slug}.html"><style>{CSS}</style></head><body><main>@@NAV@@
 <h1>{html.escape(title)}</h1><p class="note">{html.escape(desc)}</p>{body}{faqs}
 <footer>입력한 값은 이 기기 안에서만 계산되며 서버로 전송되지 않습니다. 결과는 참고용이며 법적·금융 효력이 없습니다.</footer></main><script>{script}</script></body></html>"""
-    (OUT / f"{slug}.html").write_text(doc, encoding="utf-8")
+    DOCS[slug] = doc
     PAGES[slug] = (title, desc)
 
 
@@ -79,9 +80,67 @@ o.innerHTML=K+'장(<b>'+f(K*1000)+'원</b>)을 사면<br>1등 확률 <b>1/'+f(1/
      [("번호를 고르는 방법으로 확률을 높일 수 있나요?", "모든 번호 조합의 1등 확률은 같습니다. 어떤 분석 방법도 확률을 높이지 못합니다."),
       ("몇 장을 사면 1등이 되나요?", "1등 확률은 장수에 비례해 늘어나지만 1천 장을 사도 약 0.012%입니다.")])
 
+TODAY = "const td=new Date(),tds=td.getFullYear()+'-'+String(td.getMonth()+1).padStart(2,'0')+'-'+String(td.getDate()).padStart(2,'0');"
+
+page("vat", "부가세 계산기 (공급가액·합계금액)", "공급가액에서 부가세 10%를 더하거나, 합계금액에서 공급가액과 부가세를 나눕니다.",
+     """<div class="card"><label>금액 (원)</label><input id="a" type="number" value="110000"><label>입력한 금액은</label><select id="m"><option value="t">합계금액(부가세 포함)</option><option value="s">공급가액(부가세 별도)</option></select>
+<button onclick="go()">계산하기</button><div class="res" id="o"></div></div>""",
+     FMT + """function go(){const A=+a.value;let sup,vat,tot;if(m.value==='t'){tot=A;sup=Math.round(A/1.1);vat=tot-sup}else{sup=A;vat=Math.round(A*0.1);tot=sup+vat}
+o.innerHTML='공급가액 <b>'+f(sup)+'원</b><br>부가세(10%) <b>'+f(vat)+'원</b><br>합계금액 <b>'+f(tot)+'원</b>'}go()""",
+     [("부가세율은 얼마인가요?", "일반과세자의 부가가치세율은 10%입니다. 면세 품목이나 영세율 거래는 다릅니다."),
+      ("간이과세자도 같은가요?", "간이과세자는 업종별 부가율을 적용해 납부세액이 달라집니다. 이 계산기는 거래 금액의 10% 기준입니다.")])
+
+page("rent", "전월세 전환 계산기", "전세를 월세로, 월세를 전세로 바꿀 때 금액을 계산합니다. 전환율은 직접 입력합니다.",
+     """<div class="card"><b>전세 → 월세</b><label>전세금 (원)</label><input id="j" type="number" value="300000000"><label>월세로 바꿀 때 남길 보증금 (원)</label><input id="d" type="number" value="50000000">
+<label>전월세 전환율 (연 %)</label><input id="r" type="number" step="0.01" value="5"><button onclick="go1()">월세 계산</button><div class="res" id="o1"></div></div>
+<div class="card"><b>월세 → 전세</b><label>보증금 (원)</label><input id="d2" type="number" value="50000000"><label>월세 (원)</label><input id="w2" type="number" value="1000000">
+<label>전월세 전환율 (연 %)</label><input id="r2" type="number" step="0.01" value="5"><button onclick="go2()">전세 환산</button><div class="res" id="o2"></div></div>""",
+     FMT + """function go1(){const m=(+j.value-+d.value)*(+r.value/100)/12;o1.innerHTML='월세 <b>'+f(m)+'원</b>'}
+function go2(){const R=+r2.value/100;o2.innerHTML=R?'전세 환산액 <b>'+f(+d2.value+ +w2.value*12/R)+'원</b>':'전환율을 입력하세요'}go1();go2()""",
+     [("전월세 전환율은 어떻게 정해지나요?", "주택임대차보호법 시행령은 한국은행 기준금리에 일정 비율을 더한 값을 상한으로 정합니다. 현재 적용되는 값은 법제처 국가법령정보센터에서 확인하세요."),
+      ("계산식은 무엇인가요?", "월세 = (전세금 − 보증금) × 전환율 ÷ 12 입니다. 반대로 전세 환산액 = 보증금 + 월세 × 12 ÷ 전환율 입니다.")])
+
+page("pyeong", "평수 ㎡ 변환 계산기", "평을 제곱미터(㎡)로, 제곱미터를 평으로 바꿉니다.",
+     """<div class="card"><label>평</label><input id="py" type="number" step="0.01" value="25"><button onclick="a()">㎡로 변환</button><div class="res" id="o1"></div></div>
+<div class="card"><label>제곱미터 (㎡)</label><input id="m2" type="number" step="0.01" value="84"><button onclick="b()">평으로 변환</button><div class="res" id="o2"></div></div>""",
+     """const K=400/121;function a(){o1.innerHTML=(+py.value)+'평 = <b>'+(py.value*K).toFixed(2)+'㎡</b>'}function b(){o2.innerHTML=(+m2.value)+'㎡ = <b>'+(m2.value/K).toFixed(2)+'평</b>'}a();b()""",
+     [("1평은 몇 ㎡인가요?", "1평은 약 3.3058㎡입니다(400/121㎡)."),
+      ("아파트 84㎡는 몇 평인가요?", "약 25.4평입니다. 다만 분양 면적과 전용 면적은 다르므로 어느 면적인지 확인해야 합니다."),
+      ("평을 광고에 써도 되나요?", "계량법상 거래 증명에는 ㎡ 사용이 원칙입니다. 평은 참고용으로만 쓰세요.")])
+
+page("age", "만 나이 계산기", "생년월일로 만 나이, 연 나이, 세는나이와 태어난 지 며칠인지 계산합니다.",
+     """<div class="card"><label>생년월일</label><input id="b" type="date" value="1990-01-01"><label>기준일</label><input id="r" type="date"><button onclick="go()">계산하기</button><div class="res" id="o"></div></div>""",
+     TODAY + """r.value=tds;function go(){const B=b.value.split('-').map(Number),R=r.value.split('-').map(Number);let y=R[0]-B[0];if(R[1]<B[1]||(R[1]===B[1]&&R[2]<B[2]))y--;
+const days=Math.round((Date.UTC(R[0],R[1]-1,R[2])-Date.UTC(B[0],B[1]-1,B[2]))/864e5);
+o.innerHTML='만 나이 <b>'+y+'세</b><br>연 나이 '+(R[0]-B[0])+'세 · 세는나이 '+(R[0]-B[0]+1)+'세<br>태어난 지 <b>'+days.toLocaleString('ko-KR')+'일</b>'}go()""",
+     [("만 나이는 어떻게 계산하나요?", "기준일의 연도에서 태어난 연도를 빼고, 올해 생일이 아직 지나지 않았으면 1을 뺍니다. 2023년 6월부터 법적·사회적 나이는 만 나이로 통일되었습니다."),
+      ("연 나이는 무엇인가요?", "기준 연도에서 출생 연도를 뺀 나이입니다. 병역·청소년 보호 등 일부 법령에서 쓰입니다.")])
+
+page("dday", "날짜 계산기 (D-day·며칠 후)", "두 날짜 사이의 일수를 구하거나, 어떤 날로부터 N일 뒤가 언제인지 계산합니다.",
+     """<div class="card"><b>두 날짜 사이</b><label>시작일</label><input id="a" type="date"><label>종료일</label><input id="b" type="date"><button onclick="go1()">일수 계산</button><div class="res" id="o1"></div></div>
+<div class="card"><b>N일 후·전 날짜</b><label>기준일</label><input id="c" type="date"><label>일수 (뒤는 +, 앞은 −)</label><input id="n" type="number" value="100"><button onclick="go2()">날짜 계산</button><div class="res" id="o2"></div></div>""",
+     TODAY + """a.value=tds;c.value=tds;const t2=new Date(td.getTime()+100*864e5);b.value=t2.getFullYear()+'-'+String(t2.getMonth()+1).padStart(2,'0')+'-'+String(t2.getDate()).padStart(2,'0');
+const U=v=>{const x=v.split('-').map(Number);return Date.UTC(x[0],x[1]-1,x[2])};const DN=['일','월','화','수','목','금','토'];
+function go1(){const d=Math.round((U(b.value)-U(a.value))/864e5);o1.innerHTML='<b>'+Math.abs(d)+'일</b> ('+(d>=0?'종료일이 이후':'종료일이 이전')+') · 약 '+(Math.abs(d)/7).toFixed(1)+'주<br><span class="note">시작일 당일을 포함하면 '+(Math.abs(d)+1)+'일입니다.</span>'}
+function go2(){const t=new Date(U(c.value)+ +n.value*864e5);o2.innerHTML='<b>'+t.getUTCFullYear()+'년 '+(t.getUTCMonth()+1)+'월 '+t.getUTCDate()+'일 ('+DN[t.getUTCDay()]+')</b>'}go1();go2()""",
+     [("100일은 어떻게 세나요?", "관례적으로 기준일을 1일째로 세면 99일 후가 100일째입니다. 이 계산기는 기준일 다음 날을 1일로 셉니다. 기념일은 그에 맞춰 입력하세요."),
+      ("기준일을 포함해서 세려면?", "일수 계산 결과에 1을 더하면 됩니다. 결과 아래에 포함한 일수도 함께 표시합니다.")])
+
+page("bmi", "BMI 계산기 (체질량지수)", "키와 몸무게로 체질량지수(BMI)와 대한비만학회 기준 구간을 확인합니다.",
+     """<div class="card"><label>키 (cm)</label><input id="h" type="number" step="0.1" value="170"><label>몸무게 (kg)</label><input id="w" type="number" step="0.1" value="65"><button onclick="go()">계산하기</button><div class="res" id="o"></div></div>""",
+     """function go(){const H=+h.value/100,B=+w.value/(H*H);const g=B<18.5?'저체중':B<23?'정상':B<25?'비만 전단계(과체중)':B<30?'1단계 비만':B<35?'2단계 비만':'3단계 비만';
+o.innerHTML='BMI <b>'+B.toFixed(1)+'</b> · '+g+'<br><span class="note">정상 체중 범위: '+(18.5*H*H).toFixed(1)+'~'+(22.9*H*H).toFixed(1)+'kg</span>'}go()""",
+     [("BMI 기준은 무엇인가요?", "대한비만학회는 아시아 기준으로 18.5 미만 저체중, 18.5~22.9 정상, 23~24.9 비만 전단계, 25 이상 비만으로 봅니다."),
+      ("BMI만으로 건강을 판단할 수 있나요?", "근육량·체지방·나이를 반영하지 못하는 단순 지표입니다. 건강 판단은 의료진 상담이 필요하며 이 결과는 의학적 조언이 아닙니다.")])
+
+NAV = '<nav><a href="index.html">목록</a>' + "".join(f'<a href="{sl}.html">{html.escape(t.split(" (")[0])}</a>' for sl, (t, d) in PAGES.items()) + "</nav>"
+for sl, doc in DOCS.items():
+    (OUT / f"{sl}.html").write_text(doc.replace("@@NAV@@", NAV), encoding="utf-8")
 cards = "".join(f'<div class="card"><a href="{s}.html"><b>{html.escape(t)}</b></a><div class="note">{html.escape(d)}</div></div>' for s, (t, d) in PAGES.items())
 (OUT / "index.html").write_text(f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>생활 계산기 모음</title>
-<meta name="description" content="대출 이자, 적금, 퇴직금, 시급 월급 환산, 로또 확률을 계산하는 무료 계산기 모음"><style>{CSS}</style></head><body><main>{NAV}<h1>생활 계산기 모음</h1>
+<meta name="description" content="대출 이자, 적금, 퇴직금, 시급, 부가세, 전월세 전환, 평수, 만 나이, 날짜, BMI 등 무료 계산기 모음"><link rel="canonical" href="{BASE}"><style>{CSS}</style></head><body><main>{NAV}<h1>생활 계산기 모음</h1>
 <p class="note">회원가입 없이 바로 쓰는 무료 계산기. 입력한 값은 기기 밖으로 나가지 않습니다.</p>{cards}</main></body></html>""", encoding="utf-8")
-(OUT / "robots.txt").write_text("User-agent: *\nAllow: /\n", encoding="utf-8")
+urls = [BASE] + [f"{BASE}{sl}.html" for sl in PAGES]
+(OUT / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "".join(f"<url><loc>{u}</loc></url>\n" for u in urls) + "</urlset>\n", encoding="utf-8")
+(OUT / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {BASE}sitemap.xml\n", encoding="utf-8")
 print("pages", len(PAGES))
